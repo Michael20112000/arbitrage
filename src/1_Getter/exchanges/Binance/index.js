@@ -3,15 +3,19 @@ import {Transformer} from './Transformer.js'
 
 export const Binance = new class {
   async getDataForArbitrage() {
-    const [accountInfo, exchangeInfo] = await Promise.all([
+    const [/*{serverTime},*/ accountInfo, exchangeInfo] = await Promise.all([
+      // API.checkServerTime(),
       API.getAccountInfo(),
       API.getExchangeInfo()
     ])
 
+    // console.log('time difference: ', serverTime - Date.now())
+
     const {makerCommission, takerCommission, balances} = accountInfo
+
     const {symbols} = exchangeInfo
 
-    let aliveSymbols = Transformer.filterAliveSymbols(symbols).slice(0, 1000)
+    let aliveSymbols = Transformer.filterAliveSymbols(symbols).slice(0, 300)
 
     aliveSymbols = Transformer.trimUnnecessaryInfo(aliveSymbols)
 

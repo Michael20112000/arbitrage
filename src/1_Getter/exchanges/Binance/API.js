@@ -9,6 +9,10 @@ const API_KEY = process.env.API_KEY
 const API_SECRET = process.env.API_SECRET
 
 export const API = new class {
+  checkServerTime() {
+    return this._createRequest({path: '/api/v3/time'})
+  }
+
   getAccountInfo() {
     return this._createRequest({path: '/api/v3/account', isSecure: true})
   }

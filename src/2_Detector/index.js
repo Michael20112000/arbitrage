@@ -1,4 +1,4 @@
-// import fs from 'fs'
+import fs from 'fs'
 
 export const Detector = new class {
   detectArbitrage({symbolsData, currency, balances, steps}) {
@@ -8,16 +8,11 @@ export const Detector = new class {
       steps
     }
 
-    result.miningMethods = this._findMentions({symbolsData, currency})
+    result.realizations = this._buildRealizations(symbolsData, currency, steps)
 
-    result.miningMethods.forEach(symbObj => {
-      const step2Currency = symbObj.baseAsset === currency ? symbObj.quoteAsset : symbObj.baseAsset
-      symbObj.miningMethods = this._findMentions({symbolsData, currency: step2Currency})
-
-      symbObj.miningMethods.forEach(s => {
-        const step3Currency = s.baseAsset === step2Currency ? s.quoteAsset : s.baseAsset
-        s.miningMethods = this._findMentions({symbolsData, currency: step3Currency})
-      })
+    fs.writeFile('staticData/result.json', JSON.stringify(result), err => {
+      if (err) throw err
+      console.log('Data written to file')
     })
 
     return result
@@ -27,6 +22,20 @@ export const Detector = new class {
     for (const item of balances) {
       if (item.asset === currency) return item.free
     }
+  }
+
+  _buildRealizations(symbolsData, currency, steps, depth = 0) {
+    if (depth === steps) {
+      return []
+    }
+
+    const realizations = this._findMentions({symbolsData, currency})
+    realizations.forEach(symbObj => {
+      const nextCurrency = symbObj.baseAsset === currency ? symbObj.quoteAsset : symbObj.baseAsset
+      symbObj.realizations = this._buildRealizations(symbolsData, nextCurrency, steps, depth + 1)
+    })
+
+    return realizations
   }
 
   _findMentions({symbolsData, currency}) {
