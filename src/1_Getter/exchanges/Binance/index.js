@@ -1,15 +1,13 @@
 import {API} from './API.js'
 import {Transformer} from './Transformer.js'
+// import fs from 'fs'
 
 export const Binance = new class {
   async getDataForArbitrage() {
-    const [/*{serverTime},*/ accountInfo, exchangeInfo] = await Promise.all([
-      // API.checkServerTime(),
+    const [accountInfo, exchangeInfo] = await Promise.all([
       API.getAccountInfo(),
       API.getExchangeInfo()
     ])
-
-    // console.log('time difference: ', serverTime - Date.now())
 
     const {makerCommission, takerCommission, balances} = accountInfo
 
@@ -19,7 +17,7 @@ export const Binance = new class {
 
     aliveSymbols = Transformer.trimUnnecessaryInfo(aliveSymbols)
 
-    const aliveSymbols_inChunks = Transformer.splitIntoChunks({arr: aliveSymbols, perChunk: 100})
+    const aliveSymbols_inChunks = Transformer.splitIntoChunks({arr: aliveSymbols, perChunk: 400})
 
     const additionalSymbolsInfo_inChunks = await Promise.all(aliveSymbols_inChunks.map(chunk => {
       const symbolsNames = Transformer.getSymbolsNames(chunk)
@@ -39,3 +37,8 @@ export const Binance = new class {
     }
   }
 }
+
+// fs.writeFile('staticData/symbolsData.json', JSON.stringify(symbolsData), err => {
+//   if (err) throw err
+//   console.log('Data written to file')
+// })

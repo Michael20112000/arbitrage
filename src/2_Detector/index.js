@@ -1,4 +1,4 @@
-import fs from 'fs'
+// import fs from 'fs'
 
 export const Detector = new class {
   detectArbitrage({symbolsData, currency, balances, steps}) {
@@ -9,11 +9,6 @@ export const Detector = new class {
     }
 
     result.realizations = this._buildRealizations(symbolsData, currency, steps)
-
-    fs.writeFile('staticData/result.json', JSON.stringify(result), err => {
-      if (err) throw err
-      console.log('Data written to file')
-    })
 
     return result
   }

@@ -42,10 +42,10 @@ export const Transformer = new class {
     return symbols.map((symbObj, index) => ({
         ...symbObj,
         price: prices[index].price,
-        // orderBook: {
-        //   sell: orderBook[index].asks.reverse(),
-        //   buy: orderBook[index].bids
-        // }
+        orderBook: {
+          sell: orderBook[index].asks.reverse(),
+          buy: orderBook[index].bids
+        }
       })
     )
   }
