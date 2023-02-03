@@ -4,16 +4,17 @@ export const Detector = new class {
   detectArbitrage({symbolsData, currency, balances, steps}) {
     const currBalance = this._getBalance(balances, currency)
 
-    const currencies = this._getCurrencies(symbolsData)
+    const whatICanGetByCurrency = this._whatICanGetByCurrency(currency, symbolsData)
 
-    const currenciesTradesInfo = this._findMentions(currencies, symbolsData)
+    whatICanGetByCurrency.forEach(symbol => {
+      const currName = symbol.baseAsset === currency ? symbol.quoteAsset : symbol.baseAsset
+      symbol.whatICanGetByCurrency = this._whatICanGetByCurrency(currName, symbolsData)
 
-    const arbitrage = this._generateChain(currenciesTradesInfo, steps)
-
-    // fs.writeFile('staticData/arbitrage.json', JSON.stringify(arbitrage), err => {
-    //   if (err) throw err
-    //   console.log('Data written to file')
-    // })
+      symbol.whatICanGetByCurrency.forEach(symb => {
+        const currName = symb.baseAsset === currency ? symb.quoteAsset : symb.baseAsset
+        symb.whatICanGetByCurrency = this._whatICanGetByCurrency(currName, symbolsData)
+      })
+    })
 
     return symbolsData
   }
@@ -24,44 +25,8 @@ export const Detector = new class {
     }
   }
 
-  _getCurrencies(symbolsData) {
-    const currencies = new Set()
+  _whatICanGetByCurrency() {
 
-    symbolsData.forEach(i => {
-      currencies.add(i.baseAsset)
-      currencies.add(i.quoteAsset)
-    })
-
-    return Array.from(currencies)
-  }
-
-  _findMentions(currencies, symbolsData) {
-    const result = {}
-
-    currencies.forEach(currency => {
-      const items = symbolsData.filter(item => item.baseAsset === currency || item.quoteAsset === currency)
-
-      result[currency] = items.map(item => ({
-          ...item,
-          type: item.baseAsset === currency ? 'buy' : 'sell'
-        })
-      )
-    })
-
-    return result
-  }
-
-  _generateChain(currenciesTradesInfo, steps) {
-    for (const curr in currenciesTradesInfo) {
-      const tradedSymbols = currenciesTradesInfo[curr]
-
-      tradedSymbols.forEach(s => {
-        s.next = s.type === 'buy'
-          ? s.next = currenciesTradesInfo[s.quoteAsset]
-          : s.next = currenciesTradesInfo[s.baseAsset]
-      })
-    }
-    return currenciesTradesInfo
   }
 }
 
