@@ -2,15 +2,20 @@
 
 export const Detector = new class {
   detectArbitrage({symbolsData, currency, balances, steps}) {
-    const result = {
-      target: currency,
-      balance: this._getBalance(balances, currency),
-      steps
-    }
+    const currBalance = this._getBalance(balances, currency)
 
-    result.realizations = this._buildRealizations(symbolsData, currency, steps)
+    const currencies = this._getCurrencies(symbolsData)
 
-    return result
+    const currenciesTradesInfo = this._findMentions(currencies, symbolsData)
+
+    const arbitrage = this._generateChain(currenciesTradesInfo, steps)
+
+    // fs.writeFile('staticData/arbitrage.json', JSON.stringify(arbitrage), err => {
+    //   if (err) throw err
+    //   console.log('Data written to file')
+    // })
+
+    return symbolsData
   }
 
   _getBalance(balances, currency) {
@@ -19,33 +24,44 @@ export const Detector = new class {
     }
   }
 
-  _buildRealizations(symbolsData, currency, steps, depth = 0) {
-    if (depth === steps) {
-      return []
-    }
+  _getCurrencies(symbolsData) {
+    const currencies = new Set()
 
-    const realizations = this._findMentions({symbolsData, currency})
-    realizations.forEach(symbObj => {
-      const nextCurrency = symbObj.baseAsset === currency ? symbObj.quoteAsset : symbObj.baseAsset
-      symbObj.realizations = this._buildRealizations(symbolsData, nextCurrency, steps, depth + 1)
+    symbolsData.forEach(i => {
+      currencies.add(i.baseAsset)
+      currencies.add(i.quoteAsset)
     })
 
-    return realizations
+    return Array.from(currencies)
   }
 
-  _findMentions({symbolsData, currency}) {
-    const arr = []
+  _findMentions(currencies, symbolsData) {
+    const result = {}
 
-    for (const item of symbolsData) {
-      if (item.baseAsset === currency || item.quoteAsset === currency) {
-        arr.push({
+    currencies.forEach(currency => {
+      const items = symbolsData.filter(item => item.baseAsset === currency || item.quoteAsset === currency)
+
+      result[currency] = items.map(item => ({
           ...item,
-          type: currency === item.baseAsset ? 'sell' : 'buy'
+          type: item.baseAsset === currency ? 'buy' : 'sell'
         })
-      }
-    }
+      )
+    })
 
-    return arr
+    return result
+  }
+
+  _generateChain(currenciesTradesInfo, steps) {
+    for (const curr in currenciesTradesInfo) {
+      const tradedSymbols = currenciesTradesInfo[curr]
+
+      tradedSymbols.forEach(s => {
+        s.next = s.type === 'buy'
+          ? s.next = currenciesTradesInfo[s.quoteAsset]
+          : s.next = currenciesTradesInfo[s.baseAsset]
+      })
+    }
+    return currenciesTradesInfo
   }
 }
 

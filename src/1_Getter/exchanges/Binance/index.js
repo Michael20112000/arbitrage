@@ -13,7 +13,7 @@ export const Binance = new class {
 
     const {symbols} = exchangeInfo
 
-    let aliveSymbols = Transformer.filterAliveSymbols(symbols).slice(0, 300)
+    let aliveSymbols = Transformer.filterAliveSymbols(symbols).slice(0, 1000)
 
     aliveSymbols = Transformer.trimUnnecessaryInfo(aliveSymbols)
 
