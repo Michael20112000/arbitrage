@@ -4,17 +4,22 @@ export const Detector = new class {
   detectArbitrage({symbolsData, currency, balances, steps}) {
     const currBalance = this._getBalance(balances, currency)
 
-    const whatICanGetByCurrency = this._whatICanGetByCurrency(currency, symbolsData)
+    const first = this._whatICanGetByCurrency(currency, symbolsData)
 
-    whatICanGetByCurrency.forEach(symbol => {
+    first.forEach(symbol => {
       const currName = symbol.baseAsset === currency ? symbol.quoteAsset : symbol.baseAsset
-      symbol.whatICanGetByCurrency = this._whatICanGetByCurrency(currName, symbolsData)
+      symbol.second = this._whatICanGetByCurrency(currName, symbolsData)
 
-      symbol.whatICanGetByCurrency.forEach(symb => {
+      symbol.second.forEach(symb => {
         const currName = symb.baseAsset === currency ? symb.quoteAsset : symb.baseAsset
-        symb.whatICanGetByCurrency = this._whatICanGetByCurrency(currName, symbolsData)
+        symb.third = this._whatICanGetByCurrency(currName, symbolsData)
       })
     })
+
+    // fs.writeFile('staticData/first.json', JSON.stringify(first), err => {
+    //   if (err) throw err
+    //   console.log('Data written to file')
+    // })
 
     return symbolsData
   }
@@ -25,8 +30,8 @@ export const Detector = new class {
     }
   }
 
-  _whatICanGetByCurrency() {
-
+  _whatICanGetByCurrency(currency, symbolsData) {
+    return symbolsData.filter(item => item.baseAsset === currency || item.quoteAsset === currency)
   }
 }
 
