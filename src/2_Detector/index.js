@@ -1,25 +1,34 @@
-// import fs from 'fs'
+import fs from 'fs'
 
 export const Detector = new class {
   detectArbitrage({symbolsData, currency, balances, steps}) {
-    const currBalance = this._getBalance(balances, currency)
+    const currencyBalance = this._getBalance(balances, currency)
 
-    const first = this._whatICanGetByCurrency(currency, symbolsData)
+    let step1 = this._getTradedSymbols(symbolsData, currency)
 
-    first.forEach(symbol => {
-      const currName = symbol.baseAsset === currency ? symbol.quoteAsset : symbol.baseAsset
-      symbol.second = this._whatICanGetByCurrency(currName, symbolsData)
+    let step2 = []
 
-      symbol.second.forEach(symb => {
-        const currName = symb.baseAsset === currency ? symb.quoteAsset : symb.baseAsset
-        symb.third = this._whatICanGetByCurrency(currName, symbolsData)
-      })
+    let step3 = []
+
+    for (const symb of step1) {
+      const nextCurrency = symb.baseAsset === currency ? symb.quoteAsset : symb.baseAsset
+      step2.push(this._getTradedSymbols(symbolsData, nextCurrency))
+    }
+
+    fs.writeFile('staticData/step1.json', JSON.stringify(step1), err => {
+      if (err) throw err
+      console.log('Data written to file')
     })
 
-    // fs.writeFile('staticData/first.json', JSON.stringify(first), err => {
-    //   if (err) throw err
-    //   console.log('Data written to file')
-    // })
+    fs.writeFile('staticData/step2.json', JSON.stringify(step2), err => {
+      if (err) throw err
+      console.log('Data written to file')
+    })
+
+    fs.writeFile('staticData/step3.json', JSON.stringify(step3), err => {
+      if (err) throw err
+      console.log('Data written to file')
+    })
 
     return symbolsData
   }
@@ -30,8 +39,8 @@ export const Detector = new class {
     }
   }
 
-  _whatICanGetByCurrency(currency, symbolsData) {
-    return symbolsData.filter(item => item.baseAsset === currency || item.quoteAsset === currency)
+  _getTradedSymbols(symbolsData, currency) {
+    return symbolsData.filter(symb => symb.baseAsset === currency || symb.quoteAsset === currency)
   }
 }
 
