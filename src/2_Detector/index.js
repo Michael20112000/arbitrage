@@ -4,7 +4,7 @@ export const Detector = new class {
   detectArbitrage({symbolsData, currency, balances, steps}) {
     const currencyBalance = this._getBalance(balances, currency)
 
-    let step1 = this._getTradedSymbols(symbolsData, currency)
+    let step1 = this._getTradedSymbols(symbolsData, currency).slice(0, 2)
 
     let step2 = []
 
@@ -13,6 +13,14 @@ export const Detector = new class {
     for (const symb of step1) {
       const nextCurrency = symb.baseAsset === currency ? symb.quoteAsset : symb.baseAsset
       step2.push(this._getTradedSymbols(symbolsData, nextCurrency))
+
+      step2.forEach(symbArr => {
+        return symbArr.forEach(symbol => {
+          const nextCurr = symbol.baseAsset === nextCurrency ? symbol.quoteAsset : symbol.baseAsset
+
+          step3.push(this._getTradedSymbols(symbolsData, nextCurr).filter(s => s.baseAsset === currency || s.quoteAsset === currency))
+        })
+      })
     }
 
     fs.writeFile('staticData/step1.json', JSON.stringify(step1), err => {
