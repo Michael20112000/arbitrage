@@ -18,3 +18,54 @@ USDT => |- ETH => |- ADA =>  -| ------- USDT
         ...       |           |
                   |- QTU => /
                   ...
+
+1. Масив способів реалізації start currency
+2. Масив способів реалізації X (на інших)
+3. Масив масивів способів реалізації Y (на інших)
+
+1.[{}, ...] => 2.[[{}, ...], ...] => 3.[[{}, ...], ...]
+
+STEP 1 - exchange start currency (here USDT) for X (here BTC):
+[
+    {
+        "symbol": "BTCUSDT",
+        "baseAsset": "BTC",
+        "quoteAsset": "USDT",
+        "price": "21688.06000000",
+        "orderBook": {
+          "sell": [
+            "orderBook[index].asks.reverse()"
+          ],
+          "buy": [
+            "orderBook[index].bids"
+          ]
+        }
+    },
+    ...
+]
+
+STEP 2 - exchange X (here BTC) to Y (here ETH):
+[
+    [
+        {
+          "symbol": "ETHBTC",
+          "baseAsset": "ETH",
+          "quoteAsset": "BTC",
+          "price": "0.06995200",
+          "orderBook": {
+            "sell": [
+              "orderBook[index].asks.reverse()"
+            ],
+            "buy": [
+              "orderBook[index].bids"
+            ]
+          }
+        },
+        ...
+    ]
+]
+
+STEP 3 - exchange Y (here ETH) to start currency:
+[
+
+]
