@@ -1,25 +1,29 @@
 import fs from 'fs'
 
 export const Detector = new class {
-  detectArbitrage({symbolsData, currency, balances, steps}) {
-    const currencyBalance = this._getBalance(balances, currency)
+  detectArbitrage({symbolsData, target, balances, steps = 3}) {
+    const targetBalance = this._getBalance(balances, target)
 
     const currencies = this._getCurrencies(symbolsData)
 
     const currenciesTradesInfo = this._findMentions(currencies, symbolsData)
 
-    fs.writeFile('staticData/currenciesTradesInfo.json', JSON.stringify(currenciesTradesInfo), err => {
+    const arbitrageData = {
+      target, targetBalance, steps,
+      chain: this._generateChain({currenciesTradesInfo, target, targetBalance, steps})
+    }
+
+    fs.writeFile('staticData/arbitrageData.json', JSON.stringify(arbitrageData), err => {
       if (err) throw err
       console.log('Data written to file')
     })
 
-    return symbolsData
+    return 42
   }
 
   _getBalance(balances, currency) {
-    for (const item of balances) {
-      if (item.asset === currency) return item.free
-    }
+    const balance = balances.find(item => item.asset === currency)
+    return balance ? balance.free : undefined
   }
 
   _getCurrencies(symbolsData) {
@@ -42,9 +46,44 @@ export const Detector = new class {
 
     return result
   }
+
+  _generateChain({currenciesTradesInfo, target, targetBalance, steps}) {
+    let result
+
+    if (steps !== 0) {
+      const targetTrades = currenciesTradesInfo[target]
+
+      result = targetTrades.map(variant => {
+        const nextTarget = variant.baseAsset === target ? variant.quoteAsset : variant.baseAsset
+
+        return {
+          ...variant,
+          next: this._generateChain({
+            currenciesTradesInfo,
+            target: nextTarget,
+            targetBalance,
+            steps: steps - 1
+          })
+        }
+      })
+
+      return result
+    }
+  }
 }
 
 // fs.writeFile('staticData/symbolsData.json', JSON.stringify(symbolsData), err => {
 //   if (err) throw err
 //   console.log('Data written to file')
 // })
+
+/*
+{
+  target: 'USDT',
+  targetBalance: 1000,
+  arbitrationDepth: 3,
+  chain: [
+    {}
+  ]
+}
+*/
