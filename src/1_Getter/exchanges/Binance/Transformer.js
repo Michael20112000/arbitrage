@@ -43,8 +43,8 @@ export const Transformer = new class {
         ...symbObj,
         price: prices[index].price,
         orderBook: {
-          sell: ['orderBook[index].asks.reverse()'],
-          buy: ['orderBook[index].bids']
+          sell: orderBook[index].asks.reverse(),
+          buy: orderBook[index].bids
         }
       })
     )

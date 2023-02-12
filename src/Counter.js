@@ -53,15 +53,6 @@ Array.prototype.find = function (callback) {
   return undefined
 }
 
-Object.prototype.forIn = function (callback) {
-  for (const key in this) {
-    iterationCounter++
-    if (this.hasOwnProperty(key)) {
-      callback(this[key], key, this)
-    }
-  }
-}
-
 function calculateTime(start, name) {
   const end = process.hrtime(start)
   const time = end[0] + end[1] / 1e9
