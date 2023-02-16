@@ -2,7 +2,8 @@ import fs from 'fs'
 
 export const Detector = new class {
   detectArbitrage({symbolsData, target, balances, steps = 3}) {
-    const targetBalance = this._getBalance(balances, target)
+    // const targetBalance = this._getBalance(balances, target)
+    const targetBalance = 500
 
     const currencies = this._getCurrencies(symbolsData)
 
@@ -54,14 +55,20 @@ export const Detector = new class {
       const targetTrades = currenciesTradesInfo[target]
 
       result = targetTrades.map(variant => {
-        const nextTarget = variant.baseAsset === target ? variant.quoteAsset : variant.baseAsset
+        const isTargetBaseAsset = variant.baseAsset === target
+        const nextTarget = isTargetBaseAsset ? variant.quoteAsset : variant.baseAsset
+
+        const type = isTargetBaseAsset ? 'sell' : 'buy'
+        const theoreticalQuantity = type === 'buy' ? targetBalance / variant.price : targetBalance * variant.price
 
         return {
           ...variant,
+          type,
+          theoreticalQuantity,
           next: this._generateChain({
             currenciesTradesInfo,
             target: nextTarget,
-            targetBalance,
+            targetBalance: theoreticalQuantity,
             steps: steps - 1
           })
         }
@@ -70,20 +77,13 @@ export const Detector = new class {
       return result
     }
   }
+
+  _calculateQuantity({type, price}) {
+    return price
+  }
 }
 
 // fs.writeFile('staticData/symbolsData.json', JSON.stringify(symbolsData), err => {
 //   if (err) throw err
 //   console.log('Data written to file')
 // })
-
-/*
-{
-  target: 'USDT',
-  targetBalance: 1000,
-  arbitrationDepth: 3,
-  chain: [
-    {}
-  ]
-}
-*/
