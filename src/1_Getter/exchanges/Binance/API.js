@@ -44,7 +44,7 @@ export const API = new class {
       })
 
       request.on('error', err => {
-        console.log('Request error!!!', err)
+        console.log('Request error!', err)
       })
       request.end()
     })
