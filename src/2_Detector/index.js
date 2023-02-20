@@ -2,23 +2,24 @@ import fs from 'fs'
 
 export const Detector = new class {
   detectArbitrage({symbolsData, target, balances, steps = 3}) {
-    const targetBalance = this._getBalance(balances, target)
+    // const targetBalance = this._getBalance(balances, target)
+    const targetBalance = 500
 
     const currencies = this._getCurrencies(symbolsData)
 
     const currenciesTradesInfo = this._findMentions(currencies, symbolsData)
 
-    const arbitrageData = {
-      target, targetBalance, steps,
-      chain: this._generateChain({currenciesTradesInfo, target, targetBalance, steps})
-    }
+    const chain = this._generateChain({currenciesTradesInfo, target, targetBalance, steps})
 
-    fs.writeFile('staticData/arbitrageData.json', JSON.stringify(arbitrageData), err => {
+    fs.writeFile('staticData/chain.json', JSON.stringify(chain), err => {
       if (err) throw err
       console.log('Data written to file')
     })
 
-    return 42
+    return {
+      target, targetBalance, steps,
+      chain
+    }
   }
 
   _getBalance(balances, currency) {
@@ -48,27 +49,37 @@ export const Detector = new class {
   }
 
   _generateChain({currenciesTradesInfo, target, targetBalance, steps}) {
-    let result
-
     if (steps !== 0) {
-      const targetTrades = currenciesTradesInfo[target]
+      return currenciesTradesInfo[target].map(variant => {
+        const isTargetBaseAsset = variant.baseAsset === target
+        const nextTarget = isTargetBaseAsset ? variant.quoteAsset : variant.baseAsset
 
-      result = targetTrades.map(variant => {
-        const nextTarget = variant.baseAsset === target ? variant.quoteAsset : variant.baseAsset
+        const type = isTargetBaseAsset ? 'sell' : 'buy'
+        const theoreticalQuantity = type === 'buy' ? targetBalance / variant.price : targetBalance * variant.price
+
+        const next = this._generateChain({
+          currenciesTradesInfo,
+          target: nextTarget,
+          targetBalance: theoreticalQuantity,
+          steps: steps - 1
+        })
+
+        if (next) {
+          next.filter(i => i)
+        }
 
         return {
           ...variant,
-          next: this._generateChain({
-            currenciesTradesInfo,
-            target: nextTarget,
-            targetBalance,
-            steps: steps - 1
-          })
+          type,
+          theoreticalQuantity,
+          next
         }
       })
-
-      return result
     }
+  }
+
+  _calculateQuantity({type, price}) {
+    return price
   }
 }
 
@@ -78,12 +89,17 @@ export const Detector = new class {
 // })
 
 /*
-{
-  target: 'USDT',
-  targetBalance: 1000,
-  arbitrationDepth: 3,
-  chain: [
-    {}
-  ]
-}
+[
+  {
+    "symbol": "BTCUSDT",
+    "price": "24992.74000000",
+    "theoreticalQuantity": 0.02000580968713314
+  },
+  {
+    "symbol": "ETHUSDT",
+    "price": "1701.74000000",
+    "theoreticalQuantity": 0.29000580968713314
+  },
+  ...
+]
 */
