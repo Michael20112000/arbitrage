@@ -1,7 +1,6 @@
-import fs from 'fs'
-
 export const Detector = new class {
   detectArbitrage({symbolsData, target, balances, steps = 3}) {
+    this.firstTarget = target
     // const targetBalance = this._getBalance(balances, target)
     const targetBalance = 500
 
@@ -9,16 +8,20 @@ export const Detector = new class {
 
     const currenciesTradesInfo = this._findMentions(currencies, symbolsData)
 
-    const chain = this._generateChain({currenciesTradesInfo, target, targetBalance, steps})
-
-    fs.writeFile('staticData/chain.json', JSON.stringify(chain), err => {
-      if (err) throw err
-      console.log('Data written to file')
+    const chains = this._generateChains({
+      currenciesTradesInfo,
+      target,
+      targetBalance,
+      steps
     })
 
+    const queue = this._generateQueue(chains)
+
     return {
-      target, targetBalance, steps,
-      chain
+      target,
+      targetBalance,
+      steps,
+      queue
     }
   }
 
@@ -48,7 +51,7 @@ export const Detector = new class {
     return result
   }
 
-  _generateChain({currenciesTradesInfo, target, targetBalance, steps}) {
+  _generateChains = ({currenciesTradesInfo, target, targetBalance, steps}) => {
     if (steps !== 0) {
       return currenciesTradesInfo[target].map(variant => {
         const isTargetBaseAsset = variant.baseAsset === target
@@ -57,15 +60,15 @@ export const Detector = new class {
         const type = isTargetBaseAsset ? 'sell' : 'buy'
         const theoreticalQuantity = type === 'buy' ? targetBalance / variant.price : targetBalance * variant.price
 
-        const next = this._generateChain({
+        let next = this._generateChains({
           currenciesTradesInfo,
           target: nextTarget,
           targetBalance: theoreticalQuantity,
           steps: steps - 1
         })
 
-        if (next) {
-          next.filter(i => i)
+        if (steps === 2) {
+          next = next.filter(i => i.baseAsset === this.firstTarget || i.quoteAsset === this.firstTarget)
         }
 
         return {
@@ -78,28 +81,7 @@ export const Detector = new class {
     }
   }
 
-  _calculateQuantity({type, price}) {
-    return price
+  _generateQueue(chains) {
+    return 42
   }
 }
-
-// fs.writeFile('staticData/symbolsData.json', JSON.stringify(symbolsData), err => {
-//   if (err) throw err
-//   console.log('Data written to file')
-// })
-
-/*
-[
-  {
-    "symbol": "BTCUSDT",
-    "price": "24992.74000000",
-    "theoreticalQuantity": 0.02000580968713314
-  },
-  {
-    "symbol": "ETHUSDT",
-    "price": "1701.74000000",
-    "theoreticalQuantity": 0.29000580968713314
-  },
-  ...
-]
-*/
