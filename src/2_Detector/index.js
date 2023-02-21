@@ -2,7 +2,7 @@ export const Detector = new class {
   detectArbitrage({symbolsData, target, balances, steps = 3}) {
     this.firstTarget = target
     // const targetBalance = this._getBalance(balances, target)
-    const targetBalance = 500
+    const targetBalance = 100
 
     const currencies = this._getCurrencies(symbolsData)
 
@@ -12,10 +12,14 @@ export const Detector = new class {
       currenciesTradesInfo, target, targetBalance, steps
     })
 
-    // const queue = tree.flatMap((node) => this._collectPaths(node))
+    const branchesQueue = tree.flatMap((node) => this._getBranches(node))
+
+    const branches = this._removeShortBranches(branchesQueue, steps)
+
+    const profitFirstSortedBranches = this._sortProfitFirst(branches)
 
     return {
-      target, targetBalance, steps, tree
+      target, targetBalance, steps, profitFirstSortedBranches
     }
   }
 
@@ -68,7 +72,7 @@ export const Detector = new class {
 
         if (steps === 2) {
           next = next.filter(i => {
-            if(i) {
+            if (i) {
               return i.baseAsset === this.firstTarget || i.quoteAsset === this.firstTarget
             }
           })
@@ -77,16 +81,26 @@ export const Detector = new class {
         return {
           ...variant, type, theoreticalQuantity, next
         }
-      })
+      }).filter(x => x)
     }
   }
 
-  // _collectPaths(node, path = []) {
-  //   const newPath = path.concat({...node, next: null})
-  //   if (node.next && node.next.length > 0) {
-  //     return node.next.flatMap((child) => this._collectPaths(child, newPath))
-  //   } else {
-  //     return [newPath]
-  //   }
-  // }
+  _getBranches(node, path = []) {
+    const newPath = path.concat({...node, next: null})
+    if (node.next && node.next.length > 0) {
+      return node.next.flatMap((child) => this._getBranches(child, newPath))
+    } else {
+      return [newPath]
+    }
+  }
+
+  _removeShortBranches(branches, steps) {
+    return branches.filter(br => br.length === steps)
+  }
+
+  _sortProfitFirst(branches) {
+    return branches.sort((a, b) => {
+      return b[b.length - 1].theoreticalQuantity - a[a.length - 1].theoreticalQuantity
+    })
+  }
 }

@@ -19,7 +19,7 @@ import fs from 'fs'
   })
 
   // const arbitrageResult = Worker.makeMoney(binanceArbitrage)
-  console.log(`iterationCounter: ${iterationCounter}`)
+  console.log(`iterations: ${iterationCounter}`)
 }())
 
 // fs.writeFile('staticData/symbolsData.json', JSON.stringify(symbolsData), err => {
