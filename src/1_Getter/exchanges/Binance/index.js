@@ -33,7 +33,10 @@ export const Binance = new class {
     const fullSymbols = Transformer.generateFullSymbols(aliveSymbols, combinedAdditionalSymbolsInfo)
 
     return {
-      makerCommission, takerCommission, balances, symbolsData: fullSymbols
+      makerCommission: makerCommission / 100,
+      takerCommission: takerCommission / 100,
+      balances,
+      symbolsData: fullSymbols
     }
   }
 }

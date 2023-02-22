@@ -1,15 +1,14 @@
 export const Detector = new class {
-  detectArbitrage({symbolsData, target, balances, steps = 3}) {
+  detectArbitrage({symbolsData, target, balances, makerCommission, takerCommission, steps = 3}) {
     this.firstTarget = target
-    // const targetBalance = this._getBalance(balances, target)
-    const targetBalance = 100
+    const targetBalance = this._getBalance(balances, target)
 
     const currencies = this._getCurrencies(symbolsData)
 
     const currenciesTradesInfo = this._findMentions(currencies, symbolsData)
 
     const tree = this._generateTree({
-      currenciesTradesInfo, target, targetBalance, steps
+      currenciesTradesInfo, target, targetBalance, makerCommission, takerCommission, steps
     })
 
     const branchesQueue = tree.flatMap((node) => this._getBranches(node))
@@ -60,7 +59,10 @@ export const Detector = new class {
         const nextTarget = isTargetBaseAsset ? variant.quoteAsset : variant.baseAsset
 
         const type = isTargetBaseAsset ? 'sell' : 'buy'
-        const theoreticalQuantity = type === 'buy' ? targetBalance / variant.price : targetBalance * variant.price
+        let theoreticalQuantity = type === 'buy' ? targetBalance / variant.price : targetBalance * variant.price
+        const tradeCommissions = (theoreticalQuantity * 0.1) / 100
+        // const takerCommissions = (theoreticalQuantity * 0.5) / 100
+        theoreticalQuantity = theoreticalQuantity - tradeCommissions
 
         let next = this._generateTree({
           currenciesTradesInfo,
