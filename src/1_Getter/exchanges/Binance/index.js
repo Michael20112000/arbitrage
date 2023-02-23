@@ -1,6 +1,6 @@
 import {API} from './API.js'
 import {Transformer} from './Transformer.js'
-// import fs from 'fs'
+import fs from 'fs'
 
 export const Binance = new class {
   async getDataForArbitrage() {
@@ -12,6 +12,11 @@ export const Binance = new class {
     const {makerCommission, takerCommission, balances} = accountInfo
 
     const {symbols} = exchangeInfo
+
+    fs.writeFile('staticData/symbols.json', JSON.stringify(symbols), err => {
+      if (err) throw err
+      console.log('Data written to file')
+    })
 
     let aliveSymbols = Transformer.filterAliveSymbols(symbols).slice(0, 1000)
 

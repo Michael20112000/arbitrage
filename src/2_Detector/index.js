@@ -11,11 +11,11 @@ export const Detector = new class {
       currenciesTradesInfo, target, targetBalance, makerCommission, takerCommission, steps
     })
 
-    const branchesQueue = tree.flatMap((node) => this._getBranches(node))
+    const branches = tree.flatMap((node) => this._getBranches(node))
 
-    const branches = this._removeShortBranches(branchesQueue, steps)
+    const fullBranches = this._removeShortBranches(branches, steps)
 
-    const profitFirstSortedBranches = this._sortProfitFirst(branches)
+    const profitFirstSortedBranches = this._sortProfitFirst(fullBranches)
 
     return {
       target, targetBalance, steps, profitFirstSortedBranches
