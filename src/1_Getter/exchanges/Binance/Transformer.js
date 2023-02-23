@@ -6,7 +6,20 @@ export const Transformer = new class {
   }
 
   trimUnnecessaryInfo(symbols) {
-    return symbols.map(({symbol, baseAsset, quoteAsset}) => ({symbol, baseAsset, quoteAsset}))
+    return symbols.map(({
+                          symbol,
+                          baseAsset,
+                          quoteAsset,
+                          quotePrecision,
+                          baseAssetPrecision,
+                          quoteAssetPrecision,
+                          baseCommissionPrecision,
+                          quoteCommissionPrecision
+                        }) => ({
+      symbol, baseAsset, quoteAsset, quotePrecision,
+      baseAssetPrecision, quoteAssetPrecision,
+      baseCommissionPrecision, quoteCommissionPrecision
+    }))
   }
 
   splitIntoChunks({arr, perChunk}) {
