@@ -1,8 +1,8 @@
 export const Detector = new class {
-  detectArbitrage({symbolsData, target, balances, makerCommission, takerCommission, steps = 3}) {
+  detectArbitrage({balances, symbolsData, target, steps = 3}) {
     this.firstTarget = target
-    this.makerCommission = makerCommission
-    this.takerCommission = takerCommission
+    this.makerCommission = 0.1
+    this.takerCommission = 0.1
 
     const targetBalance = this._getBalance(balances, target)
 

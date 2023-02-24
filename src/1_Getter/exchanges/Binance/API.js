@@ -9,6 +9,10 @@ const API_KEY = process.env.API_KEY
 const API_SECRET = process.env.API_SECRET
 
 export const API = new class {
+  getFees() {
+    return this._createRequest({path: `/sapi/v1/asset/tradeFee`, isSecure: true})
+  }
+
   getAccountInfo() {
     return this._createRequest({path: '/api/v3/account', isSecure: true})
   }

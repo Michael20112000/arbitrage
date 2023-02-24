@@ -4,12 +4,13 @@ import {Transformer} from './Transformer.js'
 
 export const Binance = new class {
   async getDataForArbitrage() {
-    const [accountInfo, exchangeInfo] = await Promise.all([
+    const [fees, accountInfo, exchangeInfo] = await Promise.all([
+      API.getFees(),
       API.getAccountInfo(),
       API.getExchangeInfo()
     ])
 
-    const {makerCommission, takerCommission, balances} = accountInfo
+    const {balances} = accountInfo
 
     const {symbols} = exchangeInfo
 
@@ -33,8 +34,6 @@ export const Binance = new class {
     const fullSymbols = Transformer.generateFullSymbols(aliveSymbols, combinedAdditionalSymbolsInfo)
 
     return {
-      makerCommission: makerCommission / 100,
-      takerCommission: takerCommission / 100,
       balances,
       symbolsData: fullSymbols
     }

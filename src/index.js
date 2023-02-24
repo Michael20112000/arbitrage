@@ -6,16 +6,14 @@ import fs from 'fs'
 
 (async function () {
   const getterStart = process.hrtime()
-  const {makerCommission, takerCommission, balances, symbolsData} = await Getter.getArbitrageData('binance')
+  const {balances, symbolsData} = await Getter.getArbitrageData('binance')
   calculateTime(getterStart, 'Getter')
 
   const detectorStart = process.hrtime()
   const binanceArbitrage = Detector.detectArbitrage({
+    balances,
     symbolsData,
     target: 'USDT',
-    balances,
-    makerCommission,
-    takerCommission
   })
   calculateTime(detectorStart, 'Detector')
 
