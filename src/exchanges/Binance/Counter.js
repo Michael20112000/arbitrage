@@ -1,4 +1,5 @@
 let iterationCounter = 0
+let requestCounter = 0
 
 Array.prototype.forEach = function (callback) {
   for (let i = 0; i < this.length; i++) {
@@ -53,10 +54,14 @@ Array.prototype.find = function (callback) {
   return undefined
 }
 
+function newRequest() {
+  requestCounter++
+}
+
 function calculateTime(start, name) {
   const end = process.hrtime(start)
   const time = end[0] + end[1] / 1e9
   console.log(`${name} time: ${String(time).slice(0, 4)}`)
 }
 
-export {iterationCounter, calculateTime}
+export {iterationCounter, requestCounter, newRequest, calculateTime}

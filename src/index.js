@@ -1,32 +1,11 @@
-import {iterationCounter, calculateTime} from './Counter.js'
-import {Getter} from './1_Getter/index.js'
-import {Detector} from './2_Detector/index.js'
+import {Binance} from './exchanges/Binance/index.js'
 import fs from 'fs'
-// import {Worker} from './3_Worker/index.js'
 
 (async function () {
-  const getterStart = process.hrtime()
-  const {balances, symbolsData} = await Getter.getArbitrageData('binance')
-  calculateTime(getterStart, 'Getter')
+  const binanceResult = await Binance.work()
 
-  const detectorStart = process.hrtime()
-  const binanceArbitrage = Detector.detectArbitrage({
-    balances,
-    symbolsData,
-    target: 'USDT',
-  })
-  calculateTime(detectorStart, 'Detector')
-
-  fs.writeFile('staticData/binanceArbitrage.json', JSON.stringify(binanceArbitrage), err => {
+  fs.writeFile('staticData/binanceResult.json', JSON.stringify(binanceResult), err => {
     if (err) throw err
     console.log('Data written to file')
   })
-
-  // const arbitrageResult = Worker.makeMoney(binanceArbitrage)
-  console.log(`iterations: ${iterationCounter}`)
 }())
-
-// fs.writeFile('staticData/symbolsData.json', JSON.stringify(symbolsData), err => {
-//   if (err) throw err
-//   console.log('Data written to file')
-// })

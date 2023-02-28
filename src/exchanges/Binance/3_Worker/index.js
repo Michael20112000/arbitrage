@@ -1,6 +1,6 @@
-// node_modules
-import crypto from 'crypto'
 import https from 'https'
+import crypto from 'crypto'
+import {newRequest} from '../Counter.js'
 import {config} from 'dotenv'
 // env
 config()
@@ -8,35 +8,28 @@ const BASE_ENDPOINT = process.env.BASE_ENDPOINT
 const API_KEY = process.env.API_KEY
 const API_SECRET = process.env.API_SECRET
 
-export const API = new class {
-  getFees() {
-    return this._createRequest({path: `/sapi/v1/asset/tradeFee`, isSecure: true})
-  }
+export const Worker = new class {
+  async makeMoney(arbitrage) {
+    const test = await this._createRequest({
+      method: 'POST',
+      path: '/api/v3/order?symbol=BTCUSDT&side=BUY&type=MARKET',
+      isSecure: true
+    })
 
-  getAccountInfo() {
-    return this._createRequest({path: '/api/v3/account', isSecure: true})
-  }
-
-  getExchangeInfo() {
-    return this._createRequest({path: '/api/v3/exchangeInfo?permissions=SPOT'})
-  }
-
-  getSymbolsPrices(symbolsNames) {
-    return this._createRequest({path: `/api/v3/ticker/price?symbols=${JSON.stringify(symbolsNames)}`})
-  }
-
-  getOrderBook(symbolName, limit = 20) {
-    return this._createRequest({path: `/api/v3/depth?limit=${limit}&symbol=${symbolName}`})
+    return test
   }
 
   _createRequest({method = 'GET', path, isSecure = false}) {
+    newRequest()
     return new Promise(resolve => {
       const options = {
         hostname: BASE_ENDPOINT, path, method
       }
 
       if (isSecure) {
-        options.headers = {'X-MBX-APIKEY': API_KEY}
+        options.headers = {
+          'X-MBX-APIKEY': API_KEY
+        }
         options.path = this._updateToSecure(options.path)
       }
 
