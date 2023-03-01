@@ -1,7 +1,6 @@
 import {Getter} from './1_Getter/index.js'
 import {Detector} from './2_Detector/index.js'
 import {Worker} from './3_Worker/index.js'
-// secondary
 import {calculateTime, iterationCounter, requestCounter} from './Counter.js'
 import fs from 'fs'
 

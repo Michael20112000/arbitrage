@@ -18,7 +18,7 @@ export const Getter = new class {
       await Promise.all(
         Processor.splitIntoChunks({arr: aliveSymbols, perChunk: 400})
           .map(chunk => {
-            const symbolsNames = Processor.getSymbolsNames(chunk)
+              const symbolsNames = Processor.getSymbolsNames(chunk)
             return API.getSymbolsPrices(symbolsNames)
           })
       )
