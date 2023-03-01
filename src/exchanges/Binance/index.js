@@ -3,6 +3,7 @@ import {Detector} from './2_Detector/index.js'
 import {Worker} from './3_Worker/index.js'
 // secondary
 import {calculateTime, iterationCounter, requestCounter} from './Counter.js'
+import fs from 'fs'
 
 export const Binance = new class {
   async work() {
@@ -20,15 +21,18 @@ export const Binance = new class {
     })
     calculateTime(detectorStart, 'Detector')
 
+    fs.writeFile('staticData/binanceArbitrage.json', JSON.stringify(binanceArbitrage), err => {
+      if (err) throw err
+      console.log('Data written to file')
+    })
+
     // 3. Реалізовуємо знайдений арбітраж.
-    const workerStart = process.hrtime()
-    const result = await Worker.makeMoney(binanceArbitrage)
-    calculateTime(workerStart, 'Worker')
+    // const workerStart = process.hrtime()
+    // const result = await Worker.makeMoney(binanceArbitrage)
+    // calculateTime(workerStart, 'Worker')
 
     // Просто для аналізу продуктивності.
     console.log(`iterations: ${iterationCounter}`)
     console.log(`requests: ${requestCounter}`)
-
-    return result
   }
 }
