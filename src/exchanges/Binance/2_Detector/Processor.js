@@ -37,7 +37,7 @@ export const Processor = new class {
     if (steps !== 0) {
       return currenciesTradesInfo[target].map(variant => {
         if (variant.symbol === prevSymbol) {
-          return null
+          return
         }
 
         const isTargetBaseAsset = variant.baseAsset === target
@@ -49,7 +49,13 @@ export const Processor = new class {
           side,
           balance: targetBalance,
           price: variant.price,
-          takerCommission: variant.takerCommission
+          takerCommission: variant.takerCommission,
+
+          baseAssetPrecision: variant.baseAssetPrecision,
+          quoteAssetPrecision: variant.quoteAssetPrecision,
+
+          baseCommissionPrecision: variant.baseCommissionPrecision,
+          quoteCommissionPrecision: variant.quoteCommissionPrecision,
         })
 
         let next = this.generateTree({
@@ -88,11 +94,20 @@ export const Processor = new class {
     }
   }
 
-  calculateTheoreticalQuantity({side, balance, price, takerCommission}) {
+  calculateTheoreticalQuantity({
+                                 side,
+                                 balance,
+                                 price,
+                                 takerCommission,
+                                 baseAssetPrecision,
+                                 quoteAssetPrecision,
+                                 baseCommissionPrecision,
+                                 quoteCommissionPrecision
+                               }) {
     switch (side) {
       case 'BUY': {
-        const dirtyQuantity = balance / price
-        const commission = dirtyQuantity * takerCommission / 100
+        const dirtyQuantity = (balance / price).toFixed(baseAssetPrecision)
+        const commission = (dirtyQuantity * takerCommission / 100).toFixed(baseCommissionPrecision)
         return {
           dirtyQuantity,
           commission,
@@ -100,8 +115,8 @@ export const Processor = new class {
         }
       }
       case 'SELL': {
-        const dirtyQuantity = balance * price
-        const commission = dirtyQuantity * takerCommission / 100
+        const dirtyQuantity = (balance * price).toFixed(quoteAssetPrecision)
+        const commission = (dirtyQuantity * takerCommission / 100).toFixed(quoteCommissionPrecision)
         return {
           dirtyQuantity,
           commission,
@@ -121,3 +136,18 @@ export const Processor = new class {
     })
   }
 }
+
+/*
+Target balance (USDT) = 30.80449822
+
+Step 1. AMP/USDT  ->  BUY  AMP, price 0.00516      => get 5963 AMP
+Step 2. AMP/BTC   ->  SELL AMP, price 0.00000024   => get 0.00142969 BTC
+Step 3. BTC/USDT  ->  SELL BTC, price 22351.98     => get 31.92444588 USDT
+
+Вийде 30.65551705 USDT якщо продати AMP за BTC по 0.00000023, а це менше ніж початкова сума target.
+Основна проблема: на момент коли скрипт дізнавався ціни AMP коштувала 0.00000024 BTC.
+Утворився спред, тобто можливість заробітку. Конкуренти роз'їли цей спред за долю секунди.
+
+Погрішність того про що ми говорили становить 0.1% (береться не повна сума, не 100%, а дуже наближене значення).
+Це невелика погрішність і вона погоди не робить, на даному етапі її можна ігнорувати.
+*/

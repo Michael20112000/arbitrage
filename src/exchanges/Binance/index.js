@@ -26,9 +26,14 @@ export const Binance = new class {
     })
 
     // 3. Реалізовуємо знайдений арбітраж.
-    // const workerStart = process.hrtime()
-    // const result = await Worker.makeMoney(binanceArbitrage)
-    // calculateTime(workerStart, 'Worker')
+    const workerStart = process.hrtime()
+    const workerResult = await Worker.makeMoney(binanceArbitrage)
+    calculateTime(workerStart, 'Worker')
+
+    fs.writeFile('staticData/workerResult.json', JSON.stringify(workerResult), err => {
+      if (err) throw err
+      console.log('Data written to file')
+    })
 
     // Просто для аналізу продуктивності.
     console.log(`iterations: ${iterationCounter}`)

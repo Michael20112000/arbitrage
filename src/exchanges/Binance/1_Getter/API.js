@@ -3,6 +3,7 @@ import crypto from 'crypto'
 import https from 'https'
 import {config} from 'dotenv'
 import {newRequest} from '../Counter.js'
+import url from 'url'
 // env
 config()
 const BASE_ENDPOINT = process.env.BASE_ENDPOINT
@@ -24,10 +25,6 @@ export const API = new class {
 
   getSymbolsPrices(symbolsNames) {
     return this._createRequest({path: `/api/v3/ticker/price?symbols=${JSON.stringify(symbolsNames)}`})
-  }
-
-  getOrderBook(symbolName, limit = 20) {
-    return this._createRequest({path: `/api/v3/depth?limit=${limit}&symbol=${symbolName}`})
   }
 
   _createRequest({method = 'GET', path, isSecure = false}) {

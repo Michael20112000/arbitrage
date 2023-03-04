@@ -2,6 +2,7 @@ import https from 'https'
 import crypto from 'crypto'
 import {newRequest} from '../Counter.js'
 import {config} from 'dotenv'
+import url from 'url'
 // env
 config()
 const BASE_ENDPOINT = process.env.BASE_ENDPOINT
@@ -9,14 +10,12 @@ const API_KEY = process.env.API_KEY
 const API_SECRET = process.env.API_SECRET
 
 export const Worker = new class {
-  async makeMoney(arbitrage) {
-    const test = await this._createRequest({
+  async makeMoney(data) {
+    return await this._createRequest({
       method: 'POST',
-      path: '/api/v3/order?symbol=BTCUSDT&side=BUY&type=MARKET',
+      path: '/api/v3/order/test?symbol=BTCUSDT&side=SELL&type=MARKET&quantity=0.00137577',
       isSecure: true
     })
-
-    return test
   }
 
   _createRequest({method = 'GET', path, isSecure = false}) {
@@ -49,9 +48,10 @@ export const Worker = new class {
 
   _updateToSecure(path) {
     const timestamp = Date.now()
+    const query = url.parse(path).query
 
     const hash = crypto.createHmac('sha256', API_SECRET)
-      .update(`timestamp=${timestamp}`)
+      .update(`${query}&timestamp=${timestamp}`)
       .digest('hex')
 
     const char = path.includes('?') ? '&' : '?'
