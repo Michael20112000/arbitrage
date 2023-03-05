@@ -11,9 +11,11 @@ const API_SECRET = process.env.API_SECRET
 
 export const Worker = new class {
   async makeMoney(data) {
+    const actionsSequence = data.scenarios[0]
+
     return await this._createRequest({
       method: 'POST',
-      path: '/api/v3/order/test?symbol=BTCUSDT&side=SELL&type=MARKET&quantity=0.00137577',
+      path: '/api/v3/order/test?symbol=BTCUSDT&side=SELL&type=MARKET',
       isSecure: true
     })
   }
