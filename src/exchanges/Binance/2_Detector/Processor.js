@@ -45,7 +45,7 @@ export const Processor = new class {
 
         const side = isTargetBaseAsset ? 'SELL' : 'BUY'
 
-        let {dirtyQuantity, commission, cleanQuantity, remainder} = Processor.calculateTheoreticalQuantity({
+        let {qty, dirtyQuantity, commission, cleanQuantity, remainder} = Processor.calculateTheoreticalQuantity({
           side,
           filters: variant.filters,
           balance: targetBalance,
@@ -79,7 +79,7 @@ export const Processor = new class {
         }
 
         return {
-          ...variant, side, dirtyQuantity, commission, cleanQuantity, remainder, next
+          ...variant, qty, side, dirtyQuantity, commission, cleanQuantity, remainder, next
         }
       }).filter(x => x)
     }
@@ -117,10 +117,10 @@ export const Processor = new class {
         const commission = (dirtyQuantity * takerCommission / 100).toFixed(baseCommissionPrecision)
 
         return {
+          qty: (dirtyQuantity * price).toFixed(baseCommissionPrecision),
           dirtyQuantity,
           commission,
           cleanQuantity: dirtyQuantity - commission,
-          remainder: (balance -  (dirtyQuantity * price)).toFixed(quotePrecision)
         }
       }
       case 'SELL': {
@@ -130,10 +130,10 @@ export const Processor = new class {
         const commission = (dirtyQuantity * takerCommission / 100).toFixed(quoteCommissionPrecision)
 
         return {
+          qty: (dirtyQuantity / price).toFixed(quoteCommissionPrecision),
           dirtyQuantity,
           commission,
           cleanQuantity: dirtyQuantity - commission,
-          remainder: (balance - (dirtyQuantity * price)).toFixed(quotePrecision)
         }
       }
     }

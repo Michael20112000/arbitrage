@@ -13,9 +13,39 @@ export const Worker = new class {
   async makeMoney(data) {
     const actionsSequence = data.scenarios[0]
 
-    return await this._createRequest({
+    const requests = this._implementSequence(actionsSequence)
+
+    for await (const value of requests) {
+      console.log(value)
+    }
+
+    return data
+  }
+
+  * _implementSequence(actions) {
+    const action_1 = actions[0]
+    const action_2 = actions[1]
+    const action_3 = actions[2]
+
+    const {symbol: symbol1, side: side1, qty: qty1} = action_1
+    const {symbol: symbol2, side: side2, qty: qty2} = action_2
+    const {symbol: symbol3, side: side3, qty: qty3} = action_3
+
+    yield this._createRequest({
       method: 'POST',
-      path: '/api/v3/order/test?symbol=BTCUSDT&side=SELL&type=MARKET',
+      path: `/api/v3/order?symbol=${symbol1}&side=${side1}&type=MARKET&quoteOrderQty=${qty1}`,
+      isSecure: true
+    })
+
+    yield this._createRequest({
+      method: 'POST',
+      path: `/api/v3/order?symbol=${symbol2}&side=${side2}&type=MARKET&quoteOrderQty=${qty2}`,
+      isSecure: true
+    })
+
+    yield this._createRequest({
+      method: 'POST',
+      path: `/api/v3/order?symbol=${symbol3}&side=${side3}&type=MARKET&quoteOrderQty=${qty3}`,
       isSecure: true
     })
   }
