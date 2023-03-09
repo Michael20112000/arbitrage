@@ -8,7 +8,7 @@ export const Processor = new class {
     const currencies = this._getCurrencies(symbols)
     const result = {}
 
-    currencies.forEach(currency => {
+    currencies.forEach((currency: string) => {
       result[currency] = symbols.filter(item => item.baseAsset === currency || item.quoteAsset === currency)
     })
 
@@ -45,7 +45,7 @@ export const Processor = new class {
 
         const side = isTargetBaseAsset ? 'SELL' : 'BUY'
 
-        let {qty, dirtyQuantity, commission, cleanQuantity, remainder} = Processor.calculateTheoreticalQuantity({
+        let {qty, dirtyQuantity, commission, cleanQuantity} = Processor.calculateTheoreticalQuantity({
           side,
           filters: variant.filters,
           balance: targetBalance,
@@ -56,9 +56,7 @@ export const Processor = new class {
           quoteAssetPrecision: variant.quoteAssetPrecision,
 
           baseCommissionPrecision: variant.baseCommissionPrecision,
-          quoteCommissionPrecision: variant.quoteCommissionPrecision,
-
-          quotePrecision: variant.quotePrecision
+          quoteCommissionPrecision: variant.quoteCommissionPrecision
         })
 
         let next = this.generateTree({
@@ -79,7 +77,7 @@ export const Processor = new class {
         }
 
         return {
-          ...variant, qty, side, dirtyQuantity, commission, cleanQuantity, remainder, next
+          ...variant, qty, side, dirtyQuantity, commission, cleanQuantity, next
         }
       }).filter(x => x)
     }
@@ -106,34 +104,33 @@ export const Processor = new class {
                                  baseAssetPrecision,
                                  quoteAssetPrecision,
                                  baseCommissionPrecision,
-                                 quoteCommissionPrecision,
-                                 quotePrecision
+                                 quoteCommissionPrecision
                                }) {
     switch (side) {
       case 'BUY': {
         const lotSizeFilter = filters.find(filter => filter.filterType === 'LOT_SIZE')
         const stepSize = parseFloat(lotSizeFilter.stepSize)
         const dirtyQuantity = (Math.floor((balance / price) / stepSize) * stepSize).toFixed(baseAssetPrecision)
-        const commission = (dirtyQuantity * takerCommission / 100).toFixed(baseCommissionPrecision)
+        const commission = (+dirtyQuantity * takerCommission / 100).toFixed(baseCommissionPrecision)
 
         return {
-          qty: (dirtyQuantity * price).toFixed(baseCommissionPrecision),
+          qty: (+dirtyQuantity * price).toFixed(baseCommissionPrecision),
           dirtyQuantity,
           commission,
-          cleanQuantity: dirtyQuantity - commission,
+          cleanQuantity: +dirtyQuantity - +commission,
         }
       }
       case 'SELL': {
         const lotSizeFilter = filters.find(filter => filter.filterType === 'LOT_SIZE')
         const stepSize = parseFloat(lotSizeFilter.stepSize)
         const dirtyQuantity = (Math.floor((balance * price) / stepSize) * stepSize).toFixed(quoteAssetPrecision)
-        const commission = (dirtyQuantity * takerCommission / 100).toFixed(quoteCommissionPrecision)
+        const commission = (+dirtyQuantity * takerCommission / 100).toFixed(quoteCommissionPrecision)
 
         return {
-          qty: (dirtyQuantity / price).toFixed(quoteCommissionPrecision),
+          qty: (+dirtyQuantity / price).toFixed(quoteCommissionPrecision),
           dirtyQuantity,
           commission,
-          cleanQuantity: dirtyQuantity - commission,
+          cleanQuantity: +dirtyQuantity - +commission,
         }
       }
     }

@@ -1,8 +1,6 @@
 export const Processor = new class {
   filterAliveSymbols(symbols) {
-    return symbols.filter(s => {
-      return s.status === 'TRADING'
-    })
+    return symbols.filter(s => s.status === 'TRADING')
   }
 
   splitIntoChunks({arr, perChunk}) {
