@@ -45,7 +45,7 @@ export const Processor = new class {
 
         const side = isTargetBaseAsset ? 'SELL' : 'BUY'
 
-        let {spent, dirtyQuantity, commission, cleanQuantity} = Processor.calculateTheoreticalQuantity({
+        let {spent, dirtyQuantity, commission, cleanQuantity} = Processor._calculateTheoreticalQuantity({
           side,
           filters: variant.filters,
           balance: targetBalance,
@@ -95,7 +95,7 @@ export const Processor = new class {
     }
   }
 
-  calculateTheoreticalQuantity({
+  _calculateTheoreticalQuantity({
                                  side,
                                  filters,
                                  balance,

@@ -21,8 +21,8 @@ export const Processor = new class {
     return symbols.map(({symbol}) => symbol)
   }
 
-  combineChunks(symbolsPrices) {
-    return symbolsPrices.reduce((acc, chunk) => acc.concat(chunk), [])
+  combineChunks(chunks) {
+    return chunks.flat().concat()
   }
 
   combineSymbolsInfo(symbols, symbolsPrices, fees) {
@@ -31,10 +31,10 @@ export const Processor = new class {
       return acc
     }, {})
 
-    return symbols.map((symbObj, index) => ({
-        ...symbObj,
+    return symbols.map((symb, index) => ({
+        ...symb,
         price: symbolsPrices[index].price,
-        takerCommission: feesObj[symbObj.symbol] * 100
+        takerCommission: feesObj[symb.symbol] * 100
       })
     )
   }

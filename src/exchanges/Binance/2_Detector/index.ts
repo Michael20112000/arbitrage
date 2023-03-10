@@ -15,7 +15,7 @@ export const Detector = new class {
     const acceptableBranches = Processor.removeShortBranches(allBranches, steps)
 
     return {
-      target, targetBalance, steps, scenarios: Processor.sortProfitFirst(acceptableBranches)
+      target, targetBalance, steps, branches: Processor.sortProfitFirst(acceptableBranches)
     }
   }
 }
