@@ -1,58 +1,49 @@
-// node_modules
 import crypto from 'crypto'
 import https from 'https'
 import {config} from 'dotenv'
-
-config()
-const BASE_ENDPOINT = process.env.BASE_ENDPOINT!
-const API_KEY = process.env.API_KEY!
-const API_SECRET = process.env.API_SECRET!
-// other
-import {TradeFee, AccountInfo, ExchangeInfo, SymbolPrice, RequestOptions} from './types'
 import {newRequest} from '../Counter.js'
 
+config()
+const BASE_ENDPOINT = process.env.BASE_ENDPOINT
+const API_KEY = process.env.API_KEY
+const API_SECRET = process.env.API_SECRET
+
 export const API = new class {
-  getFees(): Promise<TradeFee[]> {
-    const options = {
+  getFees() {
+    return this._createRequest({
       path: `/sapi/v1/asset/tradeFee`,
       isSecure: true
-    }
-
-    return this._createRequest(options as RequestOptions) as Promise<TradeFee[]>
+    })
   }
 
-  getAccountInfo(): Promise<AccountInfo> {
-    const options = {
+  getAccountInfo() {
+    return this._createRequest({
       path: `/api/v3/account`,
       isSecure: true
-    }
-
-    return this._createRequest(options as RequestOptions) as Promise<AccountInfo>
+    })
   }
 
-  getExchangeInfo(): Promise<ExchangeInfo> {
-    const options = {
+  getExchangeInfo() {
+    return this._createRequest({
       path: `/api/v3/exchangeInfo?permissions=SPOT`
-    }
-
-    return this._createRequest(options as RequestOptions) as Promise<ExchangeInfo>
+    })
   }
 
-  getSymbolsPrices(symbolsNames: string[]): Promise<SymbolPrice[]> {
-    const options = {
+  getSymbolsPrices(symbolsNames) {
+    return this._createRequest({
       path: `/api/v3/ticker/price?symbols=${JSON.stringify(symbolsNames)}`
-    }
-
-    return this._createRequest(options as RequestOptions) as Promise<SymbolPrice[]>
+    })
   }
 
-  _createRequest(options: RequestOptions): Promise<any> {
+  _createRequest(options): Promise<any> {
     newRequest()
     const {method = 'GET', path, isSecure} = options
 
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       const options: https.RequestOptions = {
-        hostname: BASE_ENDPOINT, path, method
+        method,
+        path,
+        hostname: BASE_ENDPOINT
       }
 
       if (isSecure) {
@@ -63,18 +54,26 @@ export const API = new class {
       const request = https.request(options, response => {
         let data = ''
         response.on('data', chunk => data += chunk)
-        response.on('error', console.error)
-        response.on('end', () => resolve(JSON.parse(data)))
+        response.on('error', err => reject(err))
+        response.on('end', () => {
+          try {
+            const responseData = JSON.parse(data)
+            resolve(responseData)
+          } catch (err) {
+            reject(err)
+          }
+        })
       })
 
       request.on('error', err => {
-        console.log('Request error!', err)
+        reject(err)
       })
+
       request.end()
     })
   }
 
-  _updateToSecure(path: string): string {
+  _updateToSecure(path) {
     const timestamp = Date.now()
 
     const hash = crypto.createHmac('sha256', API_SECRET)

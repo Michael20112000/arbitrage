@@ -1,6 +1,5 @@
 import {API} from './API.js'
 import {Processor} from './Processor.js'
-import fs from 'fs'
 
 export const Getter = new class {
   async getArbitrageData() {
@@ -24,11 +23,6 @@ export const Getter = new class {
           })
       )
     )
-
-    fs.writeFile('staticData/symbolsPrices.json', JSON.stringify(symbolsPrices), err => {
-      if (err) throw err
-      console.log('Data written to file')
-    })
 
     const symbolsData = Processor.combineSymbolsInfo(aliveSymbols, symbolsPrices, fees)
 

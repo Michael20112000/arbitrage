@@ -4,7 +4,6 @@
     "target": "ESNext",
     "outDir": "./dist",
     "esModuleInterop": true,
-    "allowJs": true,
     "moduleResolution": "node"
   },
   "include": [

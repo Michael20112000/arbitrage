@@ -16,7 +16,8 @@ export const Worker = new class {
     const requests = this._implementSequence(actionsSequence)
 
     for await (const value of requests) {
-      console.log(value)
+      // @ts-ignore
+      console.log(value.symbol || value)
     }
 
     return data
@@ -27,25 +28,25 @@ export const Worker = new class {
     const action_2 = actions[1]
     const action_3 = actions[2]
 
-    const {symbol: symbol1, side: side1, qty: qty1} = action_1
-    const {symbol: symbol2, side: side2, qty: qty2} = action_2
-    const {symbol: symbol3, side: side3, qty: qty3} = action_3
+    const {symbol: symbol1, side: side1, spent: qty1} = action_1
+    const {symbol: symbol2, side: side2, spent: qty2} = action_2
+    const {symbol: symbol3, side: side3, spent: qty3} = action_3
 
     yield this._createRequest({
       method: 'POST',
-      path: `/api/v3/order?symbol=${symbol1}&side=${side1}&type=MARKET&quoteOrderQty=${qty1}`,
+      path: `/api/v3/order?symbol=${symbol1}&side=${side1}&type=MARKET&quantity=${qty1}`,
       isSecure: true
     })
 
     yield this._createRequest({
       method: 'POST',
-      path: `/api/v3/order?symbol=${symbol2}&side=${side2}&type=MARKET&quoteOrderQty=${qty2}`,
+      path: `/api/v3/order?symbol=${symbol2}&side=${side2}&type=MARKET&quantity=${qty2}`,
       isSecure: true
     })
 
     yield this._createRequest({
       method: 'POST',
-      path: `/api/v3/order?symbol=${symbol3}&side=${side3}&type=MARKET&quoteOrderQty=${qty3}`,
+      path: `/api/v3/order?symbol=${symbol3}&side=${side3}&type=MARKET&quantity=${qty3}`,
       isSecure: true
     })
   }
@@ -53,7 +54,7 @@ export const Worker = new class {
   _createRequest({method = 'GET', path, isSecure = false}) {
     newRequest()
     return new Promise(resolve => {
-      const options = {
+      const options: https.RequestOptions = {
         hostname: BASE_ENDPOINT, path, method
       }
 

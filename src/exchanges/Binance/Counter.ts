@@ -21,6 +21,7 @@ Array.prototype.filter = function (callback) {
   return result
 }
 
+// @ts-ignore
 Array.prototype.reduce = function (callback, initialValue) {
   let accumulator = initialValue || this[0]
 
