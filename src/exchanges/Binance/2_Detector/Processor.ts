@@ -1,4 +1,6 @@
 export const Processor = new class {
+  target = undefined
+
   getTargetBalance(balances, currency) {
     const balance = balances.find(item => item.asset === currency)
     return balance ? balance.free : undefined
@@ -26,14 +28,13 @@ export const Processor = new class {
     return Array.from(currencies)
   }
 
-  generateTree = ({
-                    currenciesTradesInfo,
-                    firstTarget,
-                    target,
-                    targetBalance,
-                    steps,
-                    prevSymbol = null
-                  }) => {
+  generateTree = (treeSources, isFirstCall = true) => {
+    const {currenciesTradesInfo, target, targetBalance, steps, prevSymbol = null} = treeSources
+
+    if (isFirstCall && this.target === undefined) {
+      this.target = target
+    }
+
     if (steps !== 0) {
       return currenciesTradesInfo[target].map(variant => {
         if (variant.symbol === prevSymbol) {
@@ -45,23 +46,14 @@ export const Processor = new class {
 
         const side = isTargetBaseAsset ? 'SELL' : 'BUY'
 
-        let {spent, dirtyQuantity, commission, cleanQuantity} = Processor._calculateTheoreticalQuantity({
+        let {spent, dirtyQuantity, commission, cleanQuantity, remainder} = Processor._calculateTheoreticalQuantity({
           side,
-          filters: variant.filters,
-          balance: targetBalance,
-          price: variant.price,
-          takerCommission: variant.takerCommission,
-
-          baseAssetPrecision: variant.baseAssetPrecision,
-          quoteAssetPrecision: variant.quoteAssetPrecision,
-
-          baseCommissionPrecision: variant.baseCommissionPrecision,
-          quoteCommissionPrecision: variant.quoteCommissionPrecision
+          balance: +targetBalance,
+          variant
         })
 
         let next = this.generateTree({
           currenciesTradesInfo,
-          firstTarget,
           target: nextTarget,
           targetBalance: cleanQuantity,
           steps: steps - 1,
@@ -71,15 +63,15 @@ export const Processor = new class {
         if (steps === 2) {
           next = next.filter(i => {
             if (i) {
-              return i.baseAsset === firstTarget || i.quoteAsset === firstTarget
+              return i.baseAsset === this.target || i.quoteAsset === this.target
             }
           })
         }
 
         return {
-          ...variant, spent, side, dirtyQuantity, commission, cleanQuantity, next
+          ...variant, spent, side, dirtyQuantity, commission, cleanQuantity, remainder, next
         }
-      }).filter(x => x)
+      }).filter(x => x) // фільтруємо кроки назад
     }
   }
 
@@ -95,44 +87,39 @@ export const Processor = new class {
     }
   }
 
-  _calculateTheoreticalQuantity({
-                                 side,
-                                 filters,
-                                 balance,
-                                 price,
-                                 takerCommission,
-                                 baseAssetPrecision,
-                                 quoteAssetPrecision,
-                                 baseCommissionPrecision,
-                                 quoteCommissionPrecision
-                               }) {
+  _calculateTheoreticalQuantity({side, balance, variant}) {
+    const {filters, price, takerCommission} = variant
+    const {baseAssetPrecision, baseCommissionPrecision} = variant
+    const {quoteAssetPrecision, quoteCommissionPrecision} = variant
+
+    const stepSize = parseFloat(filters.find(filter => filter.filterType === 'LOT_SIZE').stepSize)
+    variant.price = +variant.price
+
     switch (side) {
       case 'BUY': {
-        const lotSizeFilter = filters.find(filter => filter.filterType === 'LOT_SIZE')
-        const stepSize = parseFloat(lotSizeFilter.stepSize)
-        const dirtyQuantity = (Math.floor((balance / price) / stepSize) * stepSize).toFixed(baseAssetPrecision)
-        const commission = (+dirtyQuantity * takerCommission / 100).toFixed(baseCommissionPrecision)
+        const dirtyQuantity = +(Math.floor((balance / price) / stepSize) * stepSize).toFixed(baseAssetPrecision)
+        const commission = +(dirtyQuantity * takerCommission / 100).toFixed(baseCommissionPrecision)
+        const spent = +(dirtyQuantity * price).toFixed(baseCommissionPrecision)
 
         return {
-          spent: (+dirtyQuantity * price).toFixed(baseCommissionPrecision),
+          spent,
           dirtyQuantity,
           commission,
-          // @ts-ignore
-          cleanQuantity: (dirtyQuantity - commission).toFixed(baseAssetPrecision),
+          cleanQuantity: +(dirtyQuantity - commission).toFixed(baseAssetPrecision),
+          remainder: +(balance - spent).toFixed(baseAssetPrecision)
         }
       }
       case 'SELL': {
-        const lotSizeFilter = filters.find(filter => filter.filterType === 'LOT_SIZE')
-        const stepSize = parseFloat(lotSizeFilter.stepSize)
-        const dirtyQuantity = (Math.floor((balance * price) / stepSize) * stepSize).toFixed(quoteAssetPrecision)
-        const commission = (+dirtyQuantity * takerCommission / 100).toFixed(quoteCommissionPrecision)
+        const dirtyQuantity = +(Math.floor((balance * price) / stepSize) * stepSize).toFixed(quoteAssetPrecision)
+        const commission = +(dirtyQuantity * takerCommission / 100).toFixed(quoteCommissionPrecision)
+        const spent = +(dirtyQuantity / price).toFixed(baseCommissionPrecision)
 
         return {
-          spent: (+dirtyQuantity / price).toFixed(quoteCommissionPrecision),
+          spent,
           dirtyQuantity,
           commission,
-          // @ts-ignore
-          cleanQuantity:( dirtyQuantity - commission).toFixed(quoteAssetPrecision),
+          cleanQuantity: +(dirtyQuantity - commission).toFixed(quoteAssetPrecision),
+          remainder: +(balance - spent).toFixed(quoteAssetPrecision)
         }
       }
     }
@@ -149,17 +136,18 @@ export const Processor = new class {
   }
 }
 
-/*
-Target balance (USDT) = 30.80449822
+/* SCRIPT
+  price: 10.1309 USDT
+  spent: 27.35343 USDT
+  dirtyQuantity: 2.7 AMP
+  commission: 0.0027 AMP
+  cleanQuantity: 2.6973 AMP
+*/
 
-Step 1. AMP/USDT  ->  BUY  AMP, price 0.00516      => get 5963 AMP
-Step 2. AMP/BTC   ->  SELL AMP, price 0.00000024   => get 0.00142969 BTC
-Step 3. BTC/USDT  ->  SELL BTC, price 22351.98     => get 31.92444588 USDT
-
-Вийде 30.65551705 USDT якщо продати AMP за BTC по 0.00000023, а це менше ніж початкова сума target.
-Основна проблема: на момент коли скрипт дізнавався ціни AMP коштувала 0.00000024 BTC.
-Утворився спред, тобто можливість заробітку. Конкуренти роз'їли цей спред за долю секунди.
-
-Погрішність того про що ми говорили становить 0.1% (береться не повна сума, не 100%, а дуже наближене значення).
-Це невелика погрішність і вона погоди не робить, на даному етапі її можна ігнорувати.
+/* REAL
+  price: 10.1345 USDT
+  spent: 27.36315 USDT
+  dirtyQuantity: 2.70540440 AMP
+  commission: 0.00270540 AMP
+  cleanQuantity: 2.702699 AMP
 */
