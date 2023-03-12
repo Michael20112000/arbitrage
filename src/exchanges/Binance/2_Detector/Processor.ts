@@ -1,5 +1,6 @@
 export const Processor = new class {
   target = undefined
+  targetBalance = undefined
 
   getTargetBalance(balances, currency) {
     const balance = balances.find(item => item.asset === currency)
@@ -31,8 +32,9 @@ export const Processor = new class {
   generateTree = (treeSources, isFirstCall = true) => {
     const {currenciesTradesInfo, target, targetBalance, steps, prevSymbol = null} = treeSources
 
-    if (isFirstCall && this.target === undefined) {
+    if (isFirstCall && this.target === undefined && this.targetBalance === undefined) {
       this.target = target
+      this.targetBalance = targetBalance
     }
 
     if (steps !== 0) {
@@ -46,7 +48,7 @@ export const Processor = new class {
 
         const side = isTargetBaseAsset ? 'SELL' : 'BUY'
 
-        let {spent, dirtyQuantity, commission, cleanQuantity, remainder} = Processor._calculateTheoreticalQuantity({
+        let {dirtyQuantity, commission, cleanQuantity, spent, remainder} = Processor._calculateTheoreticalQuantity({
           side,
           balance: +targetBalance,
           variant
@@ -68,9 +70,16 @@ export const Processor = new class {
           })
         }
 
-        return {
-          ...variant, spent, side, dirtyQuantity, commission, cleanQuantity, remainder, next
+        const result = {
+          ...variant, side, dirtyQuantity, commission, cleanQuantity, spent, remainder, next
         }
+
+        if (steps === 1) {
+          result.targetEarnings = +(cleanQuantity - this.targetBalance).toFixed(variant.baseAssetPrecision)
+          result.percentEarnings = +(cleanQuantity * 100 / this.targetBalance - 100).toFixed(2)
+        }
+
+        return result
       }).filter(x => x) // фільтруємо кроки назад
     }
   }
@@ -93,32 +102,31 @@ export const Processor = new class {
     const {quoteAssetPrecision, quoteCommissionPrecision} = variant
 
     const stepSize = parseFloat(filters.find(filter => filter.filterType === 'LOT_SIZE').stepSize)
-    variant.price = +variant.price
 
     switch (side) {
       case 'BUY': {
-        const dirtyQuantity = +(Math.floor((balance / price) / stepSize) * stepSize).toFixed(baseAssetPrecision)
+        const dirtyQuantity = +(Math.trunc((balance / price) / stepSize) * stepSize).toFixed(baseAssetPrecision)
         const commission = +(dirtyQuantity * takerCommission / 100).toFixed(baseCommissionPrecision)
-        const spent = +(dirtyQuantity * price).toFixed(baseCommissionPrecision)
+        const spent = +(dirtyQuantity * price).toFixed(quoteAssetPrecision)
 
         return {
-          spent,
           dirtyQuantity,
           commission,
           cleanQuantity: +(dirtyQuantity - commission).toFixed(baseAssetPrecision),
+          spent,
           remainder: +(balance - spent).toFixed(baseAssetPrecision)
         }
       }
       case 'SELL': {
-        const dirtyQuantity = +(Math.floor((balance * price) / stepSize) * stepSize).toFixed(quoteAssetPrecision)
+        const dirtyQuantity = +(Math.trunc((balance * price) / stepSize) * stepSize).toFixed(quoteAssetPrecision)
         const commission = +(dirtyQuantity * takerCommission / 100).toFixed(quoteCommissionPrecision)
-        const spent = +(dirtyQuantity / price).toFixed(baseCommissionPrecision)
+        const spent = +(dirtyQuantity / price).toFixed(baseAssetPrecision)
 
         return {
-          spent,
           dirtyQuantity,
           commission,
           cleanQuantity: +(dirtyQuantity - commission).toFixed(quoteAssetPrecision),
+          spent,
           remainder: +(balance - spent).toFixed(quoteAssetPrecision)
         }
       }
@@ -135,19 +143,3 @@ export const Processor = new class {
     })
   }
 }
-
-/* SCRIPT
-  price: 10.1309 USDT
-  spent: 27.35343 USDT
-  dirtyQuantity: 2.7 AMP
-  commission: 0.0027 AMP
-  cleanQuantity: 2.6973 AMP
-*/
-
-/* REAL
-  price: 10.1345 USDT
-  spent: 27.36315 USDT
-  dirtyQuantity: 2.70540440 AMP
-  commission: 0.00270540 AMP
-  cleanQuantity: 2.702699 AMP
-*/

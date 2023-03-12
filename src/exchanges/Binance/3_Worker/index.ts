@@ -11,44 +11,27 @@ const API_SECRET = process.env.API_SECRET
 
 export const Worker = new class {
   async makeMoney(data) {
-    const actionsSequence = data.branches[0]
+    const actions = data.branches[0]
+    const requests = []
 
-    const requests = this._implementSequence(actionsSequence) // масив об'єктів, для кожного має робитись запит на сервер
+    for (const action of actions) {
+      const {symbol, side, spent} = action
 
-    for await (const value of requests) {
-      // @ts-ignore
+      const request = this._createRequest({
+        method: 'POST',
+        path: `/api/v3/order?symbol=${symbol}&side=${side}&type=MARKET&quoteOrderQty=${spent}`,
+        isSecure: true
+      })
+
+      requests.push(request)
+    }
+
+    for (const request of requests) {
+      const value = await request
       console.log(value.symbol || value)
     }
 
     return data
-  }
-
-  * _implementSequence(actions) {
-    const action_1 = actions[0]
-    const action_2 = actions[1]
-    const action_3 = actions[2]
-
-    const {symbol: symbol1, side: side1, spent: spent1} = action_1
-    const {symbol: symbol2, side: side2, spent: spent2} = action_2
-    const {symbol: symbol3, side: side3, spent: spent3} = action_3
-
-    yield this._createRequest({
-      method: 'POST',
-      path: `/api/v3/order/test?symbol=${symbol1}&side=${side1}&type=MARKET&quoteOrderQty=${spent1}`,
-      isSecure: true
-    })
-
-    yield this._createRequest({
-      method: 'POST',
-      path: `/api/v3/order/test?symbol=${symbol2}&side=${side2}&type=MARKET&quoteOrderQty=${spent2}`,
-      isSecure: true
-    })
-
-    yield this._createRequest({
-      method: 'POST',
-      path: `/api/v3/order/test?symbol=${symbol3}&side=${side3}&type=MARKET&quoteOrderQty=${spent3}`,
-      isSecure: true
-    })
   }
 
   _createRequest({method = 'GET', path, isSecure = false}) {
