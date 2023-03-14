@@ -4,7 +4,7 @@ export const Processor = new class {
 
   getTargetBalance(balances, currency) {
     const balance = balances.find(item => item.asset === currency)
-    return balance ? balance.free : undefined
+    return balance ? +balance.free : undefined
   }
 
   findMentions(symbols) {
@@ -29,10 +29,10 @@ export const Processor = new class {
     return Array.from(currencies)
   }
 
-  generateTree = (treeSources, isFirstCall = true) => {
+  generateTree = (treeSources) => {
     const {currenciesTradesInfo, target, targetBalance, steps, prevSymbol = null} = treeSources
 
-    if (isFirstCall && this.target === undefined && this.targetBalance === undefined) {
+    if (this.target === undefined && this.targetBalance === undefined) {
       this.target = target
       this.targetBalance = targetBalance
     }
@@ -48,9 +48,9 @@ export const Processor = new class {
 
         const side = isTargetBaseAsset ? 'SELL' : 'BUY'
 
-        let {dirtyQuantity, commission, cleanQuantity, spent, remainder} = Processor._calculateTheoreticalQuantity({
+        let {dirtyQuantity, commission, cleanQuantity, spent, remainder} = Processor._makeCalculations({
           side,
-          balance: +targetBalance,
+          balance: targetBalance,
           variant
         })
 
@@ -96,7 +96,7 @@ export const Processor = new class {
     }
   }
 
-  _calculateTheoreticalQuantity({side, balance, variant}) {
+  _makeCalculations({side, balance, variant}) {
     const {filters, price, takerCommission} = variant
     const {baseAssetPrecision, baseCommissionPrecision} = variant
     const {quoteAssetPrecision, quoteCommissionPrecision} = variant

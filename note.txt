@@ -1,3 +1,10 @@
+1. dirtyQuantity
+2. commission
+3. cleanQuantity
+4. spent
+5. remainder
+6. targetEarnings (for last)
+7. percentEarnings (for last)
 
                   ...
                   |- ETH => \

@@ -19,7 +19,7 @@ export const Worker = new class {
 
       const request = this._createRequest({
         method: 'POST',
-        path: `/api/v3/order?symbol=${symbol}&side=${side}&type=MARKET&quoteOrderQty=${spent}`,
+        path: `/api/v3/order/test?symbol=${symbol}&side=${side}&type=MARKET&quoteOrderQty=${spent}`,
         isSecure: true
       })
 

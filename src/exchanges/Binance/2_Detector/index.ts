@@ -2,7 +2,7 @@ import {Processor} from './Processor.js'
 
 export const Detector = new class {
   detectArbitrage({balances, symbolsData, target, steps = 3}) {
-    const targetBalance = +Processor.getTargetBalance(balances, target)
+    const targetBalance = Processor.getTargetBalance(balances, target)
 
     const currenciesTradesInfo = Processor.findMentions(symbolsData)
 
