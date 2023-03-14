@@ -1,4 +1,5 @@
 import {Processor} from './Processor.js'
+import fs from "fs";
 
 export const Detector = new class {
   detectArbitrage({balances, symbolsData, target, steps = 3}) {
@@ -8,6 +9,11 @@ export const Detector = new class {
 
     const tree = Processor.generateTree({
       currenciesTradesInfo, target, targetBalance, steps
+    })
+
+    fs.writeFile('staticData/tree.json', JSON.stringify(tree), err => {
+      if (err) throw err
+      console.log('Data written to file')
     })
 
     const allBranches = tree.flatMap(node => Processor.getBranches(node))

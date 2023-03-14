@@ -1,6 +1,6 @@
 export const Processor = new class {
-  target = undefined
-  targetBalance = undefined
+  mainTarget = undefined
+  mainTargetBalance = undefined
 
   getTargetBalance(balances, currency) {
     const balance = balances.find(item => item.asset === currency)
@@ -32,26 +32,26 @@ export const Processor = new class {
   generateTree = (treeSources) => {
     const {currenciesTradesInfo, target, targetBalance, steps, prevSymbol = null} = treeSources
 
-    if (this.target === undefined && this.targetBalance === undefined) {
-      this.target = target
-      this.targetBalance = targetBalance
+    if (this.mainTarget === undefined && this.mainTargetBalance === undefined) {
+      this.mainTarget = target
+      this.mainTargetBalance = targetBalance
     }
 
     if (steps !== 0) {
-      return currenciesTradesInfo[target].map(variant => {
-        if (variant.symbol === prevSymbol) {
-          return
+      return currenciesTradesInfo[target].reduce((acc, symbObj) => {
+        if (symbObj.symbol === prevSymbol) {
+          return acc
         }
 
-        const isTargetBaseAsset = variant.baseAsset === target
-        const nextTarget = isTargetBaseAsset ? variant.quoteAsset : variant.baseAsset
+        const isTargetBaseAsset = target === symbObj.baseAsset
+        const nextTarget = isTargetBaseAsset ? symbObj.quoteAsset : symbObj.baseAsset
 
         const side = isTargetBaseAsset ? 'SELL' : 'BUY'
 
         let {dirtyQuantity, commission, cleanQuantity, spent, remainder} = Processor._makeCalculations({
           side,
-          balance: targetBalance,
-          variant
+          targetBalance,
+          symbObj
         })
 
         let next = this.generateTree({
@@ -59,28 +59,26 @@ export const Processor = new class {
           target: nextTarget,
           targetBalance: cleanQuantity,
           steps: steps - 1,
-          prevSymbol: variant.symbol
+          prevSymbol: symbObj.symbol
         })
 
         if (steps === 2) {
-          next = next.filter(i => {
-            if (i) {
-              return i.baseAsset === this.target || i.quoteAsset === this.target
-            }
-          })
+          // тут next === масив символів на максимальній глибині рекурсії,
+          // потрібно щоб він містив тільки ті символи що дозволять вийти на mainTarget
+          next = next.filter(i => i.baseAsset === this.mainTarget || i.quoteAsset === this.mainTarget)
         }
 
         const result = {
-          ...variant, side, dirtyQuantity, commission, cleanQuantity, spent, remainder, next
+          ...symbObj, side, dirtyQuantity, commission, cleanQuantity, spent, remainder, next
         }
 
         if (steps === 1) {
-          result.targetEarnings = +(cleanQuantity - this.targetBalance).toFixed(variant.baseAssetPrecision)
-          result.percentEarnings = +(cleanQuantity * 100 / this.targetBalance - 100).toFixed(2)
+          result.targetEarnings = 42
+          result.percentEarnings = 42
         }
 
-        return result
-      }).filter(x => x) // фільтруємо кроки назад
+        return [...acc, result]
+      }, [])
     }
   }
 
@@ -96,38 +94,34 @@ export const Processor = new class {
     }
   }
 
-  _makeCalculations({side, balance, variant}) {
-    const {filters, price, takerCommission} = variant
-    const {baseAssetPrecision, baseCommissionPrecision} = variant
-    const {quoteAssetPrecision, quoteCommissionPrecision} = variant
-
-    const stepSize = parseFloat(filters.find(filter => filter.filterType === 'LOT_SIZE').stepSize)
+  _makeCalculations({side, targetBalance, symbObj}) {
+    const {filters, price, takerCommission} = symbObj
+    const {baseAssetPrecision, baseCommissionPrecision} = symbObj
+    const {quoteAssetPrecision, quoteCommissionPrecision} = symbObj
 
     switch (side) {
       case 'BUY': {
-        const dirtyQuantity = +(Math.trunc((balance / price) / stepSize) * stepSize).toFixed(baseAssetPrecision)
-        const commission = +(dirtyQuantity * takerCommission / 100).toFixed(baseCommissionPrecision)
-        const spent = +(dirtyQuantity * price).toFixed(quoteAssetPrecision)
+        const dirtyQuantity = 42
+        const commission = 42
+        const cleanQuantity = 42
+        const spent = 42
+        const remainder = 42
 
         return {
-          dirtyQuantity,
-          commission,
-          cleanQuantity: +(dirtyQuantity - commission).toFixed(baseAssetPrecision),
-          spent,
-          remainder: +(balance - spent).toFixed(baseAssetPrecision)
+          dirtyQuantity, commission, cleanQuantity,
+          spent, remainder
         }
       }
       case 'SELL': {
-        const dirtyQuantity = +(Math.trunc((balance * price) / stepSize) * stepSize).toFixed(quoteAssetPrecision)
-        const commission = +(dirtyQuantity * takerCommission / 100).toFixed(quoteCommissionPrecision)
-        const spent = +(dirtyQuantity / price).toFixed(baseAssetPrecision)
+        const dirtyQuantity = 42
+        const commission = 42
+        const cleanQuantity = 42
+        const spent = 42
+        const remainder = 42
 
         return {
-          dirtyQuantity,
-          commission,
-          cleanQuantity: +(dirtyQuantity - commission).toFixed(quoteAssetPrecision),
-          spent,
-          remainder: +(balance - spent).toFixed(quoteAssetPrecision)
+          dirtyQuantity, commission, cleanQuantity,
+          spent, remainder
         }
       }
     }
